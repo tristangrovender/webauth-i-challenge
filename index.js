@@ -28,10 +28,7 @@ server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
-// server check
-server.get("/", (req, res) => {
-  res.send("It's alive!!!");
-});
+
 
 // Register
 server.post("/api/register", (req, res) => {
@@ -76,6 +73,12 @@ server.get('/api/users', protected, (req, res) => {
         })
         .catch(error => res.send(error));
 })
+
+// server check
+server.get("/", (req, res) => {
+  const username = req.session.username || 'stranger';
+  res.send(`Hello ${username}!`);
+});
 
 const port = process.env.PORT || 5000;
 server.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
