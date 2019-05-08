@@ -2,33 +2,31 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-const session = require('express-session');
+const session = require("express-session");
 // const KnexSessionStore = require('KnexSessionStore')(session);
 
 const db = require("./database/dbConfig.js");
 const Users = require("./users/users-model.js");
-const protected = require('./auth/protected-middleware.js');
+const protected = require("./auth/protected-middleware.js");
 
 const server = express();
 
 const sessionConfig = {
-  name: 'monster', // default would be sid
-  secret: 'keep it secret, keep it safe!',
+  name: "monster", // default would be sid
+  secret: "keep it secret, keep it safe!",
   cookie: {
     httpOnly: true, // true means prevent access from JS code
     maxAge: 1000 * 60 * 2, // in milliseconds
-    secure: false, // true means only send the cookie over https
+    secure: false // true means only send the cookie over https
   },
   resave: false, // resave session even if it didn't change?
-  saveUninitialized: true, // create new sessions automatically, make sure to comply with the law
-}
+  saveUninitialized: true // create new sessions automatically, make sure to comply with the law
+};
 
 server.use(session(sessionConfig));
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
-
-
 
 // Register
 server.post("/api/register", (req, res) => {
@@ -55,7 +53,9 @@ server.post("/api/login", (req, res) => {
       if (user && bcrypt.compareSync(password, user.password)) {
         req.session.username = user.username;
         // cookie is sent by express-sessions library
-        res.status(200).json({ message: `Welcome ${user.username}, here's a cookie!` });
+        res
+          .status(200)
+          .json({ message: `Welcome ${user.username}, here's a cookie!` });
       } else {
         res.status(401).json({ message: "Invalid Credentials" });
       }
@@ -66,17 +66,35 @@ server.post("/api/login", (req, res) => {
 });
 
 // GET users
-server.get('/api/users', protected, (req, res) => {
-    Users.find()
-        .then(users => {
-            res.json(users);
-        })
-        .catch(error => res.send(error));
-})
+server.get("/api/users", protected, (req, res) => {
+  Users.find()
+    .then(users => {
+      res.json(users);
+    })
+    .catch(error => res.send(error));
+});
+
+// Logout
+server.get("/api/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        res.send(
+          "you can checkout anytime you like, but you can never leave..."
+        );
+      } else {
+        res.send("bye");
+      }
+    });
+  } else {
+    res.end();
+    //res.send('already logged out');
+  }
+});
 
 // server check
 server.get("/", (req, res) => {
-  const username = req.session.username || 'stranger';
+  const username = req.session.username || "stranger";
   res.send(`Hello ${username}!`);
 });
 
