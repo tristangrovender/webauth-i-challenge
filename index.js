@@ -2,6 +2,8 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const session = require('express-session');
+// const KnexSessionStore = require('KnexSessionStore')(session);
 
 const db = require("./database/dbConfig.js");
 const Users = require("./users/users-model.js");
@@ -9,13 +11,26 @@ const protected = require('./auth/protected-middleware.js');
 
 const server = express();
 
+const sessionConfig = {
+  name: 'monster', // default would be sid
+  secret: 'keep it secret, keep it safe!',
+  cookie: {
+    httpOnly: true, // true means prevent access from JS code
+    maxAge: 1000 * 60 * 2, // in milliseconds
+    secure: false, // true means only send the cookie over https
+  },
+  resave: false, // resave session even if it didn't change?
+  saveUninitialized: true, // create new sessions automatically, make sure to comply with the law
+}
+
+server.use(session(sessionConfig));
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
 // server check
 server.get("/", (req, res) => {
-  res.send("It's alive!");
+  res.send("It's alive!!!");
 });
 
 // Register
@@ -41,7 +56,9 @@ server.post("/api/login", (req, res) => {
     .first()
     .then(user => {
       if (user && bcrypt.compareSync(password, user.password)) {
-        res.status(200).json({ message: `Welcome ${user.username}!` });
+        req.session.username = user.username;
+        // cookie is sent by express-sessions library
+        res.status(200).json({ message: `Welcome ${user.username}, here's a cookie!` });
       } else {
         res.status(401).json({ message: "Invalid Credentials" });
       }
